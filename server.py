@@ -1,4 +1,5 @@
 import socket
+import json
 from _thread import *
 import sys
 
@@ -39,11 +40,16 @@ def threaded_client(conn):
                 pos[id] = reply  # Store full JSON
 
                 nid = 1 if id == 0 else 0
-                reply = pos[nid][:]
+                if pos[nid] == "":
+                    reply = json.dumps({"id": nid, "balls": []})
+                else:
+                    reply = pos[nid][:]
+
                 print("Sending: " + reply)
 
             conn.sendall(str.encode(reply))
-        except:
+        except Exception as e:
+            print("Fail:", e)
             break
 
     print("Connection Closed")
