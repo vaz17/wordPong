@@ -41,11 +41,35 @@ class Player:
             else:
                 ball["letter"] = 0
 
-            if ball["letter"] == ball["length"] and not self.queued_this_frame:
+            if ball["letter"] == ball["length"]:
                 self.balls.remove(ball)
 
-                self.queued_this_frame = True
 
+                b = pygame.Rect(0, 0, BALL_WIDTH, BALL_HEIGHT)
+                b.x, b.y = get_random_cords(player2.balls, left= not self.id == 0)
+                word = ''.join(random.choices(string.ascii_lowercase, k=random.randint(3, 5)))
+
+                self.transfer_queue.append({
+                    "x": b.x, "y": b.y,
+                    "word": word,
+                    "letter": 0,
+                    "length": len(word)
+                })
+
+
+
+    def update(self, letter, player2):
+        for ball in self.balls:
+            if ball.get("done"):
+                continue  # Already handled
+
+            if letter == ball["word"][ball["letter"]]:
+                ball["letter"] += 1
+            else:
+                ball["letter"] = 0
+
+            if ball["letter"] == ball["length"]:
+                ball["done"] = True  # Mark it for removal
                 b = pygame.Rect(0, 0, BALL_WIDTH, BALL_HEIGHT)
                 b.x, b.y = get_random_cords(player2.balls, left= not self.id == 0)
                 word = ''.join(random.choices(string.ascii_lowercase, k=random.randint(3, 5)))
@@ -100,16 +124,15 @@ class Game:
         self.canvas = Canvas(self.width, self.height, "Testing...")
         self.start_time = None
         self.time_limit = 60
-        self.queued_this_frame = False
 
     def run(self):
         clock = pygame.time.Clock()
         self.start_time = time.time()
         run = True
+
         while run:
             clock.tick(60)
 
-            self.player.queued_this_frame = False
 
 
             elapsed_time = time.time() - self.start_time
@@ -131,6 +154,8 @@ class Game:
             self.player2.balls = balls
             for b in new_balls:
                 self.player.balls.append(b)
+
+            self.player.balls = [b for b in self.player.balls if not b.get("done")]
 
             # Update Canvas
             self.canvas.draw_background(elapsed_time)
