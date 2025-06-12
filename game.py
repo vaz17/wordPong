@@ -96,11 +96,12 @@ class Game:
         self.player = Player(int(self.net.id), setup(int(self.net.id) == 0))
         self.player2 = Player((int(self.net.id) + 1) % 2)
         self.canvas = Canvas(self.width, self.height, "Testing...")
-        self.start_time = time.time()
+        self.start_time = None
         self.time_limit = 60
 
     def run(self):
         clock = pygame.time.Clock()
+        self.start_time = time.time()
         run = True
         while run:
             clock.tick(60)
