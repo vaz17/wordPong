@@ -96,12 +96,19 @@ class Game:
         self.player = Player(int(self.net.id), setup(int(self.net.id) == 0))
         self.player2 = Player((int(self.net.id) + 1) % 2)
         self.canvas = Canvas(self.width, self.height, "Testing...")
+        self.start_time = time.time()
+        self.time_limit = 60
 
     def run(self):
         clock = pygame.time.Clock()
         run = True
         while run:
             clock.tick(60)
+
+            elapsed_time = time.time() - self.start_time
+            if elapsed_time >= self.time_limit:
+                print("Time's up!")
+                run = False
 
 
             for event in pygame.event.get():
@@ -111,6 +118,7 @@ class Game:
 
                     self.player.update(pygame.key.name(event.key), self.player2)
 
+
             # Send Network Stuff
             balls, new_balls = self.parse_data(self.send_data())
             self.player2.balls = balls
@@ -118,7 +126,7 @@ class Game:
                 self.player.balls.append(b)
 
             # Update Canvas
-            self.canvas.draw_background()
+            self.canvas.draw_background(elapsed_time)
             self.player.draw(self.canvas.get_canvas())
             self.player2.draw(self.canvas.get_canvas())
             self.canvas.update()
@@ -225,8 +233,16 @@ class Canvas:
     def get_canvas(self):
         return self.screen
 
-    def draw_background(self):
+    def draw_background(self, elapsed_time=None):
         self.screen.fill("black")
         pygame.draw.line(self.screen, "white", (self.width // 2, 0), (self.width // 2, self.height))
+
+        if elapsed_time is not None:
+            remaining = max(0, int(60 - elapsed_time))
+            time_text = f"Time: {remaining}"
+            font = pygame.font.SysFont("comicsans", 40)
+            render = font.render(time_text, True, "white")
+            text_width = render.get_width()
+            self.screen.blit(render, ((self.width - text_width) // 2, 10))
 
 
