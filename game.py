@@ -175,18 +175,24 @@ class Game:
             "length": b["length"]
         } for b in self.player.balls]
 
-        # Copy and reset transfer queue
-        outgoing_transfer = self.player.transfer_queue[:]
-        self.player.transfer_queue.clear()
 
         payload = {
             "id": self.net.id,
             "balls": ball_data,
-            "new": outgoing_transfer
+            "new": self.player.transfer_queue  # send full queue directly
         }
 
         reply = self.net.send(json.dumps(payload))
+
+        # Clear ONLY if successfully sent + parsed
+        try:
+            json.loads(reply)  # confirm it’s valid JSON
+            self.player.transfer_queue.clear()
+        except:
+            print("Warning: Failed to parse reply, keeping transfer_queue.")
+
         return reply
+
 
     @staticmethod
     def parse_data(data):
