@@ -41,8 +41,10 @@ class Player:
             else:
                 ball["letter"] = 0
 
-            if ball["letter"] == ball["length"]:
+            if ball["letter"] == ball["length"] and not self.queued_this_frame:
                 self.balls.remove(ball)
+
+                self.queued_this_frame = True
 
                 b = pygame.Rect(0, 0, BALL_WIDTH, BALL_HEIGHT)
                 b.x, b.y = get_random_cords(player2.balls, left= not self.id == 0)
@@ -98,6 +100,7 @@ class Game:
         self.canvas = Canvas(self.width, self.height, "Testing...")
         self.start_time = None
         self.time_limit = 60
+        self.queued_this_frame = False
 
     def run(self):
         clock = pygame.time.Clock()
@@ -105,6 +108,9 @@ class Game:
         run = True
         while run:
             clock.tick(60)
+
+            self.player.queued_this_frame = False
+
 
             elapsed_time = time.time() - self.start_time
             if elapsed_time >= self.time_limit:
