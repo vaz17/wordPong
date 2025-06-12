@@ -16,7 +16,7 @@ class Player:
     def __init__(self, id, balls=None):
         self.balls = balls if balls is not None else []
         self.transfer_queue = []  # Balls to send to other player
-        self.id = id
+        self.id = int(id)
 
     def draw(self, g):
         for ball in self.balls:
@@ -34,7 +34,7 @@ class Player:
                 g.blit(letter_surf, (x, y))
                 x += FONT.size(char)[0]
 
-    def update(self, letter):
+    def update(self, letter, player2):
         for ball in self.balls[:]:
             if letter == ball["word"][ball["letter"]]:
                 ball["letter"] += 1
@@ -45,7 +45,7 @@ class Player:
                 self.balls.remove(ball)
 
                 b = pygame.Rect(0, 0, BALL_WIDTH, BALL_HEIGHT)
-                b.x, b.y = get_random_cords([], left=not self.id == 0)
+                b.x, b.y = get_random_cords(player2.balls, left= not self.id == 0)
                 word = ''.join(random.choices(string.ascii_lowercase, k=random.randint(3, 5)))
 
                 self.transfer_queue.append({
@@ -109,7 +109,7 @@ class Game:
                     run = False
                 elif event.type == pygame.KEYDOWN:
 
-                    self.player.update(pygame.key.name(event.key))
+                    self.player.update(pygame.key.name(event.key), self.player2)
 
             # Send Network Stuff
             balls, new_balls = self.parse_data(self.send_data())

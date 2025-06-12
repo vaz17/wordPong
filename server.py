@@ -2,11 +2,12 @@ import socket
 import json
 from _thread import *
 import sys
+from config import SERVER_IP, PORT
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-server = 'localhost'
-port = 5555
+server = SERVER_IP
+port = PORT
 
 server_ip = socket.gethostbyname(server)
 
