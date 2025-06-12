@@ -69,17 +69,21 @@ class Player:
                 ball["letter"] = 0
 
             if ball["letter"] == ball["length"]:
-                ball["done"] = True  # Mark it for removal
-                b = pygame.Rect(0, 0, BALL_WIDTH, BALL_HEIGHT)
-                b.x, b.y = get_random_cords(player2.balls, left= not self.id == 0)
-                word = ''.join(random.choices(string.ascii_lowercase, k=random.randint(3, 5)))
+                if not self.queued_this_frame:
+                    self.balls.remove(ball)
 
-                self.transfer_queue.append({
-                    "x": b.x, "y": b.y,
-                    "word": word,
-                    "letter": 0,
-                    "length": len(word)
-                })
+                    b = pygame.Rect(0, 0, BALL_WIDTH, BALL_HEIGHT)
+                    b.x, b.y = get_random_cords(player2.balls, left=(not self.id == 0))
+                    word = ''.join(random.choices(string.ascii_lowercase, k=random.randint(3, 5)))
+
+                    self.transfer_queue.append({
+                        "x": b.x, "y": b.y,
+                        "word": word,
+                        "letter": 0,
+                        "length": len(word)
+                    })
+
+                    self.queued_this_frame = True
 
 
 def get_random_cords(balls, left):
@@ -124,6 +128,7 @@ class Game:
         self.canvas = Canvas(self.width, self.height, "Testing...")
         self.start_time = None
         self.time_limit = 60
+        self.queued_this_frame = False
 
     def run(self):
         clock = pygame.time.Clock()
@@ -132,6 +137,9 @@ class Game:
 
         while run:
             clock.tick(60)
+
+
+            self.player.queued_this_frame = False
 
 
 
