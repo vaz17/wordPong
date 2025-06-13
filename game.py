@@ -143,17 +143,14 @@ class Game:
 
             if balls:
                 self.player2.balls = balls
-            else:
                 #print("[WARN] Empty or bad ball sync received — keeping previous state.")
-                print(balls)
+            #print(balls)
 
             if new_balls:
                 for b in new_balls:
                     if b["id"] not in self.received_ids:
                         self.received_ids.add(b["id"])
                         self.player.balls.append(b)
-            else:
-                print("FAIL")
 
             other_ids = {b["id"] for b in self.player2.balls}
             self.player.transfer_queue = [
