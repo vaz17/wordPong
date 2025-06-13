@@ -284,12 +284,12 @@ class Game:
     def game_end(self):
         self.canvas.draw_background()
 
-        p1_score = len(self.player.balls)
-        p2_score = len(self.player2.balls)
+        p1_score = int(len(self.player.balls))
+        p2_score = int(len(self.player2.balls))
 
         if p1_score < p2_score:
             message = "YOU WIN"
-        elif p2_score > p1_score:
+        elif p2_score < p1_score:
             message = "YOU LOSE"
         else:
             message = "TIE"

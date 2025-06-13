@@ -37,6 +37,7 @@ def recv_all(conn):
 def threaded_client(conn):
     global currentId, pos
     try:
+
         conn.send(str.encode(currentId))
         player_id = int(currentId)
         print(f"[INFO] Assigned player ID: {player_id}")
@@ -78,7 +79,8 @@ def threaded_client(conn):
                         print("[SERVER ERROR] Exception:", e)
                         reply = json.dumps({"id": nid, "balls": [], "new": []})
 
-                conn.sendall(str.encode(reply))
+
+                conn.sendall((reply + "\n").encode())
 
             except Exception as e:
                 print(f"[ERROR] Inner loop exception: {e}")
