@@ -54,7 +54,17 @@ def threaded_client(conn):
                 if pos[nid] == "":
                     reply = json.dumps({"id": nid, "balls": [], "new": []})
                 else:
-                    reply = pos[nid]
+                    try:
+                        # Validate that the data is valid JSON and contains both keys
+                        parsed = json.loads(pos[nid])
+                        if "balls" not in parsed or "new" not in parsed:
+                            raise ValueError("Missing keys")
+                        reply = pos[nid]
+                    except Exception as e:
+                        print("[SERVER ERROR] Corrupt data for player", nid, ":", pos[nid])
+                        print("[SERVER ERROR] Exception:", e)
+                        reply = json.dumps({"id": nid, "balls": [], "new": []})
+
 
                 conn.sendall(str.encode(reply))
 
