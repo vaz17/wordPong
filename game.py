@@ -134,7 +134,12 @@ class Game:
 
 
             # Send Network Stuff
-            balls, new_balls = self.parse_data(self.send_data())
+            reply = self.send_data()
+            if not reply or not reply.startswith("{"):
+                print("[ERROR] Invalid or empty reply. Skipping update.")
+                return  # Or just skip this loop iteration
+
+            balls, new_balls = self.parse_data(reply)
 
             if balls:
                 self.player2.balls = balls
@@ -190,7 +195,12 @@ class Game:
                 "new": outgoing_transfer
             }
 
-            reply = self.net.send(json.dumps(payload))
+            try:
+                reply = self.net.send(json.dumps(payload))
+                return reply
+            except Exception as e:
+                print(f"[ERROR] Network send failed: {e}")
+                return ""
 
             # Ensure the reply is valid JSON
             try:
