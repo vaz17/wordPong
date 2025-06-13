@@ -169,7 +169,6 @@ class Game:
 
     def send_data(self):
         try:
-            print("[DEBUG] Preparing ball data to send...")
             ball_data = [{
                 "id": b.get("id", generate_ball_id()),
                 "x": b["rect"].x,
@@ -179,15 +178,11 @@ class Game:
                 "length": b["length"]
             } for b in self.player.balls]
 
-            print("[DEBUG] Ball data:", ball_data)
-
-            # Ensure all transfer balls have an ID
             for b in self.player.transfer_queue:
                 if "id" not in b:
                     b["id"] = generate_ball_id()
 
             outgoing_transfer = self.player.transfer_queue[:]
-            print("[DEBUG] Transfer queue:", outgoing_transfer)
 
             payload = {
                 "id": self.net.id,
@@ -195,18 +190,19 @@ class Game:
                 "new": outgoing_transfer
             }
 
-            json_payload = json.dumps(payload)
-            print("[DEBUG] Full payload JSON:", json_payload)
+            reply = self.net.send(json.dumps(payload))
 
-            reply = self.net.send(json_payload)
-            print("[DEBUG] Reply received:", reply)
-
-            return reply
+            # Ensure the reply is valid JSON
+            try:
+                json.loads(reply)
+                return reply
+            except:
+                print(f"[ERROR] Invalid JSON reply: {reply}")
+                return json.dumps({"balls": [], "new": []})
 
         except Exception as e:
-            print("[ERROR] send_data exception:", e)
-            pygame.quit()
-            exit()
+            print(f"[ERROR] Failed to send data: {e}")
+            return json.dumps({"balls": [], "new": []})
 
 
 

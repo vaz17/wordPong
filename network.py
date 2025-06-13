@@ -18,13 +18,9 @@ class Network:
         return self.client.recv(2048).decode()
 
     def send(self, data):
-        """
-        :param data: str
-        :return: str
-        """
         try:
-            self.client.send(str.encode(data))
-            reply = self.client.recv(2048).decode()
-            return reply
-        except socket.error as e:
-            return str(e)
+            self.client.sendall(str.encode(data))
+            return self.client.recv(2048).decode()
+        except Exception as e:
+            print(f"[ERROR] Network send failed: {e}")
+            return json.dumps({"balls": [], "new": []})  # safe fallback
