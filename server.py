@@ -36,11 +36,11 @@ def threaded_client(conn, player_id):
             msg = json.loads(decoded)
             positions[player_id] = decoded
 
-            other_id = 1 - player_id
-            if positions[other_id] == "":
-                reply = json.dumps({"id": other_id, "balls": [], "new": []})
+            nid = 1 if id == 0 else 0
+            if pos[nid] == "":
+                reply = json.dumps({"id": nid, "balls": [], "new": []})
             else:
-                reply = positions[other_id]
+                reply = pos[nid][:]
 
             conn.sendall(reply.encode("utf-8"))
 

@@ -212,8 +212,12 @@ class Game:
 
     @staticmethod
     def parse_data(data):
+        if not data or not data.strip():
+            print("[ERROR] Empty or invalid data received in parse_data")
+            return [], []
+
         try:
-            print("[DEBUG] Raw data to parse:", data)
+            print(f"[DEBUG] Raw data to parse: {repr(data)}")
             parsed = json.loads(data)
 
             balls = []
