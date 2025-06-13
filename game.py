@@ -16,6 +16,7 @@ class Player:
     def __init__(self, id, balls=None):
         self.balls = balls if balls is not None else []
         self.transfer_queue = []  # Balls to send to other player
+        self.pending_transfer = []  # Balls awaiting confirmation before removal
         self.id = int(id)
 
     def draw(self, g):
@@ -41,9 +42,8 @@ class Player:
             else:
                 ball["letter"] = 0
 
-            if ball["letter"] == ball["length"]:
-                self.balls.remove(ball)
-
+            if ball["letter"] == ball["length"] and ball not in self.pending_transfer:
+                self.pending_transfer.append(ball)
 
                 b = pygame.Rect(0, 0, BALL_WIDTH, BALL_HEIGHT)
                 b.x, b.y = get_random_cords(player2.balls, left= not self.id == 0)
@@ -61,7 +61,7 @@ class Player:
     def update(self, letter, player2):
         for ball in self.balls:
             if ball.get("done"):
-                continue  # Already handled
+                continue
 
             if letter == ball["word"][ball["letter"]]:
                 ball["letter"] += 1
@@ -69,21 +69,18 @@ class Player:
                 ball["letter"] = 0
 
             if ball["letter"] == ball["length"]:
-                if not self.queued_this_frame:
-                    self.balls.remove(ball)
+                self.balls.remove(ball)
 
-                    b = pygame.Rect(0, 0, BALL_WIDTH, BALL_HEIGHT)
-                    b.x, b.y = get_random_cords(player2.balls, left=(not self.id == 0))
-                    word = ''.join(random.choices(string.ascii_lowercase, k=random.randint(3, 5)))
+                b = pygame.Rect(0, 0, BALL_WIDTH, BALL_HEIGHT)
+                b.x, b.y = get_random_cords(player2.balls, left=(not self.id == 0))
+                word = ''.join(random.choices(string.ascii_lowercase, k=random.randint(3, 5)))
 
-                    self.transfer_queue.append({
-                        "x": b.x, "y": b.y,
-                        "word": word,
-                        "letter": 0,
-                        "length": len(word)
-                    })
-
-                    self.queued_this_frame = True
+                self.transfer_queue.append({
+                    "x": b.x, "y": b.y,
+                    "word": word,
+                    "letter": 0,
+                    "length": len(word)
+                })
 
 
 def get_random_cords(balls, left):
@@ -128,7 +125,6 @@ class Game:
         self.canvas = Canvas(self.width, self.height, "Testing...")
         self.start_time = None
         self.time_limit = 60
-        self.queued_this_frame = False
 
     def run(self):
         clock = pygame.time.Clock()
@@ -137,10 +133,6 @@ class Game:
 
         while run:
             clock.tick(60)
-
-
-            self.player.queued_this_frame = False
-
 
 
             elapsed_time = time.time() - self.start_time
@@ -163,7 +155,6 @@ class Game:
             for b in new_balls:
                 self.player.balls.append(b)
 
-            self.player.balls = [b for b in self.player.balls if not b.get("done")]
 
             # Update Canvas
             self.canvas.draw_background(elapsed_time)
@@ -172,7 +163,6 @@ class Game:
             self.canvas.update()
 
         pygame.quit()
-
 
     def send_data(self):
         ball_data = [{
@@ -183,24 +173,23 @@ class Game:
             "length": b["length"]
         } for b in self.player.balls]
 
+        outgoing_transfer = self.player.transfer_queue[:]
+        self.player.transfer_queue.clear()
+
+        # Remove transferred balls now that they're confirmed sent
+        for ball in self.player.pending_transfer:
+            if ball in self.player.balls:
+                self.player.balls.remove(ball)
+        self.player.pending_transfer.clear()
 
         payload = {
             "id": self.net.id,
             "balls": ball_data,
-            "new": self.player.transfer_queue  # send full queue directly
+            "new": outgoing_transfer
         }
 
         reply = self.net.send(json.dumps(payload))
-
-        # Clear ONLY if successfully sent + parsed
-        try:
-            json.loads(reply)  # confirm it’s valid JSON
-            self.player.transfer_queue.clear()
-        except:
-            print("Warning: Failed to parse reply, keeping transfer_queue.")
-
         return reply
-
 
     @staticmethod
     def parse_data(data):
