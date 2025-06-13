@@ -3,6 +3,7 @@ import json
 import random
 import string
 import time
+import uuid
 from network import Network
 
 pygame.init()
@@ -11,6 +12,8 @@ WIDTH, HEIGHT = 1000, 800
 BALL_WIDTH = 100
 BALL_HEIGHT = 50
 
+def generate_ball_id():
+    return str(uuid.uuid4())
 
 class Player:
     def __init__(self, id, balls=None):
@@ -56,12 +59,15 @@ class Player:
             word = ''.join(random.choices(string.ascii_lowercase, k=random.randint(3, 5)))
 
             self.transfer_queue.append({
+                "id": generate_ball_id(),
                 "x": b.x,
                 "y": b.y,
                 "word": word,
                 "letter": 0,
                 "length": len(word)
             })
+
+            print(self.transfer_queue)
 
 
 def get_random_cords(balls, left):
@@ -106,6 +112,7 @@ class Game:
         self.canvas = Canvas(self.width, self.height, "Testing...")
         self.start_time = None
         self.time_limit = 60
+        self.received_ids = set()
 
     def run(self):
         clock = pygame.time.Clock()
@@ -133,12 +140,15 @@ class Game:
             # Send Network Stuff
             balls, new_balls = self.parse_data(self.send_data())
             self.player2.balls = balls
+
             for b in new_balls:
-                if b not in self.player.balls[:]:
+                if b["id"] not in self.received_ids:
+                    self.received_ids.add(b["id"])
                     self.player.balls.append(b)
-            for b in self.player.transfer_queue[:]:
-                if b in self.player2.balls:
-                    self.player.transfer_queue.remove(b)
+
+            self.player.transfer_queue = [
+                b for b in self.player.transfer_queue if b["id"] not in self.received_ids
+            ]
 
 
             # Update Canvas
@@ -150,13 +160,20 @@ class Game:
         pygame.quit()
 
     def send_data(self):
+
         ball_data = [{
+            "id": b.get("id", generate_ball_id()),
             "x": b["rect"].x,
             "y": b["rect"].y,
             "word": b["word"],
             "letter": b["letter"],
             "length": b["length"]
         } for b in self.player.balls]
+
+        # Ensure all transfer balls have an ID
+        for b in self.player.transfer_queue:
+            if "id" not in b:
+                b["id"] = generate_ball_id()
 
         outgoing_transfer = self.player.transfer_queue[:]
 
@@ -175,12 +192,14 @@ class Game:
             parsed = json.loads(data)
             balls = []
             for b in parsed["balls"]:
+
                 rect = pygame.Rect(b["x"], b["y"], BALL_WIDTH, BALL_HEIGHT)
                 balls.append({
                     "rect": rect,
                     "word": b["word"],
                     "letter": b["letter"],
-                    "length": b["length"]
+                    "length": b["length"],
+                    "id": b.get("id", generate_ball_id())
                 })
 
             new = []
@@ -191,7 +210,8 @@ class Game:
                         "rect": rect,
                         "word": b["word"],
                         "letter": 0,
-                        "length": b["length"]
+                        "length": b["length"],
+                        "id": b.get("id", generate_ball_id())
                     })
 
             return balls, new
