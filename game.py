@@ -136,7 +136,7 @@ class Game:
             # Send Network Stuff
             reply = self.send_data()
             if not reply or not reply.startswith("{"):
-                print("[ERROR] Invalid or empty reply. Skipping update.")
+                #print("[ERROR] Invalid or empty reply. Skipping update.")
                 return  # Or just skip this loop iteration
 
             balls, new_balls = self.parse_data(reply)
@@ -144,7 +144,7 @@ class Game:
             if balls:
                 self.player2.balls = balls
             else:
-                print("[WARN] Empty or bad ball sync received — keeping previous state.")
+                #print("[WARN] Empty or bad ball sync received — keeping previous state.")
                 print(balls)
 
             if new_balls:
@@ -199,7 +199,7 @@ class Game:
                 reply = self.net.send(json.dumps(payload))
                 return reply
             except Exception as e:
-                print(f"[ERROR] Network send failed: {e}")
+                #print(f"[ERROR] Network send failed: {e}")
                 return ""
 
             # Ensure the reply is valid JSON
@@ -207,11 +207,11 @@ class Game:
                 json.loads(reply)
                 return reply
             except:
-                print(f"[ERROR] Invalid JSON reply: {reply}")
+                #print(f"[ERROR] Invalid JSON reply: {reply}")
                 return json.dumps({"balls": [], "new": []})
 
         except Exception as e:
-            print(f"[ERROR] Failed to send data: {e}")
+            #print(f"[ERROR] Failed to send data: {e}")
             return json.dumps({"balls": [], "new": []})
 
 
@@ -219,7 +219,7 @@ class Game:
     @staticmethod
     def parse_data(data):
         if not data or not data.strip():
-            print("[ERROR] Empty or invalid data received in parse_data")
+            #print("[ERROR] Empty or invalid data received in parse_data")
             return [], []
 
         try:
@@ -237,7 +237,7 @@ class Game:
                     "id": b.get("id", generate_ball_id())
                 })
 
-            print("[DEBUG] Parsed balls:", balls)
+            #print("[DEBUG] Parsed balls:", balls)
 
             new = []
             if "new" in parsed:
@@ -251,11 +251,11 @@ class Game:
                         "id": b.get("id", generate_ball_id())
                     })
 
-            print("[DEBUG] Parsed new balls:", new)
+            #print("[DEBUG] Parsed new balls:", new)
             return balls, new
 
         except Exception as e:
-            print("[ERROR] parse_data exception:", e)
+            #print("[ERROR] parse_data exception:", e)
             pygame.quit()
             exit()
 

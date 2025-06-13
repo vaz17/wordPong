@@ -32,5 +32,5 @@ class Network:
 
             return received.decode().strip()
         except Exception as e:
-            print(f"[ERROR] Network send failed: {e}")
+            #print(f"[ERROR] Network send failed: {e}")
             return json.dumps({"balls": [], "new": []})
