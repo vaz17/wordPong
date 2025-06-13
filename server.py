@@ -35,7 +35,7 @@ def threaded_client(conn):
                 conn.send(str.encode("Goodbye"))
                 break
             else:
-                print("Recieved: " + reply)
+                #print("Recieved: " + reply)
                 arr = reply.split(":")
                 id = int(arr[0]) if reply.startswith("{") is False else int(json.loads(reply)["id"])
                 pos[id] = reply  # Store full JSON
@@ -46,7 +46,7 @@ def threaded_client(conn):
                 else:
                     reply = pos[nid][:]
 
-                print("Sending: " + reply)
+                #print("Sending: " + reply)
 
             conn.sendall(str.encode(reply))
         except Exception as e:

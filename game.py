@@ -70,7 +70,6 @@ class Player:
 
 
 
-            print(self.transfer_queue)
 
 
 def get_random_cords(balls, left):
@@ -161,6 +160,9 @@ class Game:
             self.player2.draw(self.canvas.get_canvas())
             self.canvas.update()
 
+
+        self.game_end()
+
         pygame.quit()
 
     def send_data(self):
@@ -246,6 +248,23 @@ class Game:
             time.sleep(0.5)  # avoid overloading the server
 
 
+    def game_end(self):
+        self.canvas.draw_background()
+
+        p1_score = len(self.player.balls)
+        p2_score = len(self.player2.balls)
+
+        if p1_score < p2_score:
+            message = "YOU WIN"
+        elif p2_score > p1_score:
+            message = "YOU LOSE"
+        else:
+            message = "TIE"
+
+        self.canvas.draw_text(message, 40, WIDTH // 2, HEIGHT // 2, "white")
+        self.canvas.update()
+        time.sleep(5)
+
 
 
 class Canvas:
@@ -260,11 +279,12 @@ class Canvas:
     def update():
         pygame.display.update()
 
-    def draw_text(self, text, size, x, y):
+    def draw_text(self, text, size, center_x, center_y, color="white"):
         pygame.font.init()
         font = pygame.font.SysFont("comicsans", size)
-        render = font.render(text, 1, (0,0,0))
-        self.screen.blit(render, (x, y))  # Correct method
+        render = font.render(text, True, color)
+        text_rect = render.get_rect(center=(center_x, center_y))
+        self.screen.blit(render, text_rect)
 
 
     def get_canvas(self):
