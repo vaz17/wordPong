@@ -16,7 +16,6 @@ class Player:
     def __init__(self, id, balls=None):
         self.balls = balls if balls is not None else []
         self.transfer_queue = []  # Balls to send to other player
-        self.pending_transfer = []  # Balls awaiting confirmation before removal
         self.id = int(id)
 
     def draw(self, g):
@@ -132,9 +131,9 @@ class Game:
             for b in new_balls:
                 if b not in self.player.balls[:]:
                     self.player.balls.append(b)
-            for b in self.player.outgoing_transfer[:]:
+            for b in self.player.transfer_queue[:]:
                 if b in self.player2.balls:
-                    self.player.outgoing_transfer.remove(b)
+                    self.player.transfer_queue.remove(b)
 
 
             # Update Canvas
