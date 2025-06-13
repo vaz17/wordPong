@@ -141,7 +141,11 @@ class Game:
 
             # Send Network Stuff
             balls, new_balls = self.parse_data(self.send_data())
-            self.player2.balls = balls
+
+            if balls:
+                self.player2.balls = balls
+            else:
+                print("[WARN] Empty or bad ball sync received — keeping previous state.")
 
             for b in new_balls:
                 if b["id"] not in self.received_ids:
