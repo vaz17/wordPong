@@ -1,67 +1,83 @@
 import socket
 import json
-from _thread import start_new_thread
+from _thread import *
+import sys
 from config import SERVER_IP, PORT
 
+# Server setup
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
 server = SERVER_IP
 port = PORT
-
-server_ip = socket.gethostbyname(server)
 
 try:
     s.bind((server, port))
 except socket.error as e:
-    print("[BIND ERROR]", str(e))
-    exit()
+    print(f"[ERROR] Failed to bind socket: {e}")
+    sys.exit(1)
 
 s.listen(2)
-print("[SERVER STARTED] Waiting for connections on", server_ip, port)
+print(f"[INFO] Server listening on {server}:{port}")
 
-positions = ["", ""]
+currentId = "0"
+pos = ["", ""]
 
-def threaded_client(conn, player_id):
-    print(f"[NEW CONNECTION] Player {player_id} connected.")
-    conn.sendall(str(player_id).encode("utf-8"))
+def threaded_client(conn):
+    global currentId, pos
+    try:
+        conn.send(str.encode(currentId))
+        player_id = int(currentId)
+        print(f"[INFO] Assigned player ID: {player_id}")
+        currentId = "1" if currentId == "0" else "0"
 
-    while True:
-        try:
-            data = conn.recv(4096)
-            if not data:
-                print(f"[DISCONNECT] Player {player_id} disconnected.")
+        while True:
+            try:
+                data = conn.recv(2048)
+                if not data:
+                    print("[INFO] Client disconnected gracefully")
+                    break
+
+                reply = data.decode('utf-8')
+                if not reply:
+                    continue
+
+                # Determine if message is JSON
+                if reply.startswith("{"):
+                    obj = json.loads(reply)
+                    id = int(obj["id"])
+                else:
+                    arr = reply.split(":")
+                    id = int(arr[0])
+
+                pos[id] = reply
+                nid = 1 if id == 0 else 0
+
+                if pos[nid] == "":
+                    reply = json.dumps({"id": nid, "balls": [], "new": []})
+                else:
+                    reply = pos[nid]
+
+                conn.sendall(str.encode(reply))
+
+            except Exception as e:
+                print(f"[ERROR] Inner loop exception: {e}")
                 break
 
-            decoded = data.decode("utf-8")
-            msg = json.loads(decoded)
-            positions[player_id] = decoded
+    except Exception as e:
+        print(f"[ERROR] Connection setup failed: {e}")
 
-            nid = 1 if id == 0 else 0
-            if pos[nid] == "":
-                reply = json.dumps({"id": nid, "balls": [], "new": []})
-            else:
-                reply = pos[nid][:]
-
-            conn.sendall(reply.encode("utf-8"))
-
-        except Exception as e:
-            print(f"[ERROR] Player {player_id}: {e}")
-            break
-
-    positions[player_id] = ""  # Clear stored state
+    print("[INFO] Closing connection")
     conn.close()
-    print(f"[CONNECTION CLOSED] Player {player_id}")
 
-player_count = 0
+# Main loop
 while True:
-    conn, addr = s.accept()
-    if player_count >= 2:
-        print(f"[REJECTED] Too many players: {addr}")
-        conn.sendall(b"Server full")
-        conn.close()
-        continue
-
-    print("[CONNECTED]", addr)
-    start_new_thread(threaded_client, (conn, player_count))
-    player_count += 1
+    try:
+        conn, addr = s.accept()
+        print(f"[INFO] Connected to: {addr}")
+        start_new_thread(threaded_client, (conn,))
+    except KeyboardInterrupt:
+        print("\n[INFO] Server shutting down.")
+        s.close()
+        sys.exit(0)
+    except Exception as e:
+        print(f"[ERROR] Accept failed: {e}")
 
