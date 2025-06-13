@@ -37,13 +37,9 @@ class Player:
 
     def update(self, letter, player2):
         for ball in self.balls[:]:
-            if letter == ball["word"][ball["letter"]]:
-                ball["letter"] += 1
-            else:
-                ball["letter"] = 0
 
-            if ball["letter"] == ball["length"] and ball not in self.pending_transfer:
-                self.pending_transfer.append(ball)
+            if ball["letter"] >= ball["length"]:
+                self.balls.remove(ball)
 
                 b = pygame.Rect(0, 0, BALL_WIDTH, BALL_HEIGHT)
                 b.x, b.y = get_random_cords(player2.balls, left= not self.id == 0)
@@ -56,31 +52,12 @@ class Player:
                     "length": len(word)
                 })
 
-
-
-    def update(self, letter, player2):
-        for ball in self.balls:
-            if ball.get("done"):
-                continue
-
-            if letter == ball["word"][ball["letter"]]:
+            elif letter == ball["word"][ball["letter"]]:
                 ball["letter"] += 1
             else:
                 ball["letter"] = 0
 
-            if ball["letter"] == ball["length"]:
-                self.balls.remove(ball)
 
-                b = pygame.Rect(0, 0, BALL_WIDTH, BALL_HEIGHT)
-                b.x, b.y = get_random_cords(player2.balls, left=(not self.id == 0))
-                word = ''.join(random.choices(string.ascii_lowercase, k=random.randint(3, 5)))
-
-                self.transfer_queue.append({
-                    "x": b.x, "y": b.y,
-                    "word": word,
-                    "letter": 0,
-                    "length": len(word)
-                })
 
 
 def get_random_cords(balls, left):
@@ -153,7 +130,11 @@ class Game:
             balls, new_balls = self.parse_data(self.send_data())
             self.player2.balls = balls
             for b in new_balls:
-                self.player.balls.append(b)
+                if b not in self.player.balls[:]:
+                    self.player.balls.append(b)
+            for b in self.player.outgoing_transfer[:]:
+                if b in self.player2.balls:
+                    self.player.outgoing_transfer.remove(b)
 
 
             # Update Canvas
@@ -174,13 +155,6 @@ class Game:
         } for b in self.player.balls]
 
         outgoing_transfer = self.player.transfer_queue[:]
-        self.player.transfer_queue.clear()
-
-        # Remove transferred balls now that they're confirmed sent
-        for ball in self.player.pending_transfer:
-            if ball in self.player.balls:
-                self.player.balls.remove(ball)
-        self.player.pending_transfer.clear()
 
         payload = {
             "id": self.net.id,
