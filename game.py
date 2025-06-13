@@ -52,6 +52,7 @@ class Player:
                 ball["letter"] = 0
 
         for ball in completed:
+
             self.balls.remove(ball)
 
             b = pygame.Rect(0, 0, BALL_WIDTH, BALL_HEIGHT)
@@ -66,6 +67,8 @@ class Player:
                 "letter": 0,
                 "length": len(word)
             })
+
+
 
             print(self.transfer_queue)
 
@@ -146,8 +149,9 @@ class Game:
                     self.received_ids.add(b["id"])
                     self.player.balls.append(b)
 
+            other_ids = {b["id"] for b in self.player2.balls}
             self.player.transfer_queue = [
-                b for b in self.player.transfer_queue if b["id"] not in self.received_ids
+                b for b in self.player.transfer_queue if b["id"] not in other_ids
             ]
 
 
