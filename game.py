@@ -38,35 +38,29 @@ class Player:
                 x += FONT.size(char)[0]
 
     def update(self, letter, player2):
-        completed = []
-
-        for ball in self.balls:
+        for ball in self.balls[:]:
             if ball["letter"] >= ball["length"]:
                 continue  # already completed
 
             if letter == ball["word"][ball["letter"]]:
                 ball["letter"] += 1
                 if ball["letter"] == ball["length"]:
-                    completed.append(ball)
+                    self.balls.remove(ball)
+
+                    b = pygame.Rect(0, 0, BALL_WIDTH, BALL_HEIGHT)
+                    b.x, b.y = get_random_cords(player2.balls, left=not self.id == 0)
+                    word = ''.join(random.choices(string.ascii_lowercase, k=random.randint(3, 5)))
+
+                    self.transfer_queue.append({
+                        "id": generate_ball_id(),
+                        "x": b.x,
+                        "y": b.y,
+                        "word": word,
+                        "letter": 0,
+                        "length": len(word)
+                    })
             else:
                 ball["letter"] = 0
-
-        for ball in completed:
-
-            self.balls.remove(ball)
-
-            b = pygame.Rect(0, 0, BALL_WIDTH, BALL_HEIGHT)
-            b.x, b.y = get_random_cords(player2.balls, left=not self.id == 0)
-            word = ''.join(random.choices(string.ascii_lowercase, k=random.randint(3, 5)))
-
-            self.transfer_queue.append({
-                "id": generate_ball_id(),
-                "x": b.x,
-                "y": b.y,
-                "word": word,
-                "letter": 0,
-                "length": len(word)
-            })
 
 
 
@@ -146,12 +140,15 @@ class Game:
                 self.player2.balls = balls
             else:
                 print("[WARN] Empty or bad ball sync received — keeping previous state.")
+                print(balls)
 
             if new_balls:
                 for b in new_balls:
                     if b["id"] not in self.received_ids:
                         self.received_ids.add(b["id"])
                         self.player.balls.append(b)
+            else:
+                print("FAIL")
 
             other_ids = {b["id"] for b in self.player2.balls}
             self.player.transfer_queue = [
@@ -171,39 +168,56 @@ class Game:
         pygame.quit()
 
     def send_data(self):
+        try:
+            print("[DEBUG] Preparing ball data to send...")
+            ball_data = [{
+                "id": b.get("id", generate_ball_id()),
+                "x": b["rect"].x,
+                "y": b["rect"].y,
+                "word": b["word"],
+                "letter": b["letter"],
+                "length": b["length"]
+            } for b in self.player.balls]
 
-        ball_data = [{
-            "id": b.get("id", generate_ball_id()),
-            "x": b["rect"].x,
-            "y": b["rect"].y,
-            "word": b["word"],
-            "letter": b["letter"],
-            "length": b["length"]
-        } for b in self.player.balls]
+            print("[DEBUG] Ball data:", ball_data)
 
-        # Ensure all transfer balls have an ID
-        for b in self.player.transfer_queue:
-            if "id" not in b:
-                b["id"] = generate_ball_id()
+            # Ensure all transfer balls have an ID
+            for b in self.player.transfer_queue:
+                if "id" not in b:
+                    b["id"] = generate_ball_id()
 
-        outgoing_transfer = self.player.transfer_queue[:]
+            outgoing_transfer = self.player.transfer_queue[:]
+            print("[DEBUG] Transfer queue:", outgoing_transfer)
 
-        payload = {
-            "id": self.net.id,
-            "balls": ball_data,
-            "new": outgoing_transfer
-        }
+            payload = {
+                "id": self.net.id,
+                "balls": ball_data,
+                "new": outgoing_transfer
+            }
 
-        reply = self.net.send(json.dumps(payload))
-        return reply
+            json_payload = json.dumps(payload)
+            print("[DEBUG] Full payload JSON:", json_payload)
+
+            reply = self.net.send(json_payload)
+            print("[DEBUG] Reply received:", reply)
+
+            return reply
+
+        except Exception as e:
+            print("[ERROR] send_data exception:", e)
+            pygame.quit()
+            exit()
+
+
 
     @staticmethod
     def parse_data(data):
         try:
+            print("[DEBUG] Raw data to parse:", data)
             parsed = json.loads(data)
+
             balls = []
             for b in parsed["balls"]:
-
                 rect = pygame.Rect(b["x"], b["y"], BALL_WIDTH, BALL_HEIGHT)
                 balls.append({
                     "rect": rect,
@@ -212,6 +226,8 @@ class Game:
                     "length": b["length"],
                     "id": b.get("id", generate_ball_id())
                 })
+
+            print("[DEBUG] Parsed balls:", balls)
 
             new = []
             if "new" in parsed:
@@ -225,11 +241,13 @@ class Game:
                         "id": b.get("id", generate_ball_id())
                     })
 
+            print("[DEBUG] Parsed new balls:", new)
             return balls, new
-        except:
-            return [], []
 
-
+        except Exception as e:
+            print("[ERROR] parse_data exception:", e)
+            pygame.quit()
+            exit()
 
     def wait_for_opponent(self):
         print("Waiting for opponent...")
