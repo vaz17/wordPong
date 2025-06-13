@@ -21,6 +21,20 @@ print(f"[INFO] Server listening on {server}:{port}")
 currentId = "0"
 pos = ["", ""]
 
+def recv_all(conn):
+    data = b""
+    while True:
+        try:
+            part = conn.recv(2048)
+            if not part:
+                break
+            data += part
+            if len(part) < 2048:
+                break
+        except:
+            break
+    return data
+
 def threaded_client(conn):
     global currentId, pos
     try:
@@ -31,12 +45,12 @@ def threaded_client(conn):
 
         while True:
             try:
-                data = conn.recv(2048)
+                data = recv_all(conn)
                 if not data:
                     print("[INFO] Client disconnected gracefully")
                     break
 
-                reply = data.decode('utf-8')
+                reply = data.decode('utf-8').strip()
                 if not reply:
                     continue
 
@@ -55,7 +69,7 @@ def threaded_client(conn):
                     reply = json.dumps({"id": nid, "balls": [], "new": []})
                 else:
                     try:
-                        # Validate that the data is valid JSON and contains both keys
+                        # Validate the peer's stored data
                         parsed = json.loads(pos[nid])
                         if "balls" not in parsed or "new" not in parsed:
                             raise ValueError("Missing keys")
@@ -64,7 +78,6 @@ def threaded_client(conn):
                         print("[SERVER ERROR] Corrupt data for player", nid, ":", pos[nid])
                         print("[SERVER ERROR] Exception:", e)
                         reply = json.dumps({"id": nid, "balls": [], "new": []})
-
 
                 conn.sendall(str.encode(reply))
 
