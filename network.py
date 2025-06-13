@@ -20,8 +20,17 @@ class Network:
 
     def send(self, data):
         try:
-            self.client.sendall((data + "\n").encode())  # Add newline as delimiter
-            return self.client.recv(2048).decode().strip()  # You may replace this with recv loop if needed
+            self.client.sendall((data + "\n").encode())  # Send with newline delimiter
+
+            # Wait until full message is received
+            received = b""
+            while not received.endswith(b"\n"):
+                part = self.client.recv(2048)
+                if not part:
+                    break
+                received += part
+
+            return received.decode().strip()
         except Exception as e:
             print(f"[ERROR] Network send failed: {e}")
             return json.dumps({"balls": [], "new": []})
