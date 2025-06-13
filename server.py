@@ -23,17 +23,16 @@ pos = ["", ""]
 
 def recv_all(conn):
     data = b""
-    while True:
+    while not data.endswith(b"\n"):  # Wait for complete message ending in newline
         try:
             part = conn.recv(2048)
             if not part:
                 break
             data += part
-            if len(part) < 2048:
-                break
         except:
             break
     return data
+
 
 def threaded_client(conn):
     global currentId, pos
