@@ -35,28 +35,33 @@ class Player:
                 x += FONT.size(char)[0]
 
     def update(self, letter, player2):
-        for ball in self.balls[:]:
+        completed = []
 
+        for ball in self.balls:
             if ball["letter"] >= ball["length"]:
-                self.balls.remove(ball)
+                continue  # already completed
 
-                b = pygame.Rect(0, 0, BALL_WIDTH, BALL_HEIGHT)
-                b.x, b.y = get_random_cords(player2.balls, left= not self.id == 0)
-                word = ''.join(random.choices(string.ascii_lowercase, k=random.randint(3, 5)))
-
-                self.transfer_queue.append({
-                    "x": b.x, "y": b.y,
-                    "word": word,
-                    "letter": 0,
-                    "length": len(word)
-                })
-
-            elif letter == ball["word"][ball["letter"]]:
+            if letter == ball["word"][ball["letter"]]:
                 ball["letter"] += 1
+                if ball["letter"] == ball["length"]:
+                    completed.append(ball)
             else:
                 ball["letter"] = 0
 
+        for ball in completed:
+            self.balls.remove(ball)
 
+            b = pygame.Rect(0, 0, BALL_WIDTH, BALL_HEIGHT)
+            b.x, b.y = get_random_cords(player2.balls, left=not self.id == 0)
+            word = ''.join(random.choices(string.ascii_lowercase, k=random.randint(3, 5)))
+
+            self.transfer_queue.append({
+                "x": b.x,
+                "y": b.y,
+                "word": word,
+                "letter": 0,
+                "length": len(word)
+            })
 
 
 def get_random_cords(balls, left):
