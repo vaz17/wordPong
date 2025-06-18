@@ -1,8 +1,8 @@
 # Word Pong
 
-A local multiplayer typing game where two players compete to type words and send them to the opponent’s side. As words fall down each player's screen, they must type them quickly to remove them and push them onto the opponent. The player with the least amount of words on their screen when the timer ends wins.
+A local multiplayer typing game where two players compete to type words displayed on their screen. Typed words are removed and sent to the opponent’s side. The player with the fewest words remaining when the timer ends wins.
 
-Built using Pygame for visuals and Python sockets for real-time communication.
+Built using Pygame for the interface and Python sockets for real-time LAN communication.
 
 ## 🎮 Features
 
